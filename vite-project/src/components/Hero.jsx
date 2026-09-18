@@ -7,16 +7,16 @@ gsap.registerPlugin(ScrollTrigger)
 
 const Hero = () => {
   const sectionRef = useRef(null)   
-  const stickyRef  = useRef(null)   
   const videoRef   = useRef(null)
+  const overlayRef  = useRef(null)
 
+  // Refs for animation layers
   const ch1TitleRef = useRef(null)
   const ch1SubRef   = useRef(null)
   const ch2TitleRef = useRef(null)
   const ch2SubRef   = useRef(null)
   const ch3TitleRef = useRef(null)
   const ch3SubRef   = useRef(null)
-  const overlayRef  = useRef(null)
 
   useEffect(() => {
     const video   = videoRef.current
@@ -28,71 +28,66 @@ const Hero = () => {
 
     const setup = () => {
       const duration = video.duration
-      const scrollLen = Math.min(
-        Math.max(duration * 150, window.innerHeight * 3),
-        window.innerHeight * 8
-      )
-
+      // Extending scroll length to make it feel more "epic" and less rushed
+      const scrollLen = window.innerHeight * 6 
       section.style.height = `${scrollLen + window.innerHeight}px`
 
+      // 1. SMOOTH VIDEO SCRUBBING
       ScrollTrigger.create({
-        trigger : section,
-        start   : 'top top',
-        end     : `+=${scrollLen}`,
-        scrub   : true,
+        trigger: section,
+        start: 'top top',
+        end: `+=${scrollLen}`,
+        scrub: 2, // This adds the "liquid" feel to the scroll
         onUpdate: (self) => {
-          const t = Math.min(self.progress * duration, duration - 0.01)
-          if (isFinite(t)) video.currentTime = t
+          const targetTime = self.progress * duration
+          // We use gsap.to instead of direct assignment to prevent frame jumping
+          gsap.to(video, {
+            currentTime: targetTime,
+            duration: 0.5,
+            ease: "power1.out"
+          })
         },
       })
 
+      // 2. TEXT ANIMATION TIMELINE
       const tl = gsap.timeline({
         scrollTrigger: {
-          trigger : section,
-          start   : 'top top',
-          end     : `+=${scrollLen}`,
-          scrub   : true,
+          trigger: section,
+          start: 'top top',
+          end: `+=${scrollLen}`,
+          scrub: 1.5, // Slightly faster than the video for a parallax feel
         },
-        defaults: { ease: 'power3.out' },
       })
 
-      tl.fromTo(ch1TitleRef.current,
-        { opacity: 0, y: 60, filter: 'blur(12px)' },
-        { opacity: 1, y: 0,  filter: 'blur(0px)', duration: 0.12 },
-        0.03)
-      tl.fromTo(ch1SubRef.current,
-        { opacity: 0, y: 30 },
-        { opacity: 1, y: 0,  duration: 0.1 },
-        0.1)
-      tl.to([ch1TitleRef.current, ch1SubRef.current],
-        { opacity: 0, y: -40, filter: 'blur(8px)', duration: 0.08 },
-        0.24)
+      // Chapter 1: The Walls
+      tl.fromTo(ch1TitleRef.current, { opacity: 0, y: 100, filter: 'blur(20px)' }, { opacity: 1, y: 0, filter: 'blur(0px)', duration: 2 })
+      tl.fromTo(ch1SubRef.current, { opacity: 0 }, { opacity: 1, duration: 1 }, "-=1")
+      tl.to([ch1TitleRef.current, ch1SubRef.current], { opacity: 0, y: -100, filter: 'blur(10px)', duration: 2 }, "+=2")
 
-      tl.fromTo(ch2TitleRef.current,
-        { opacity: 0, letterSpacing: '0.5em', filter: 'blur(18px)' },
-        { opacity: 1, letterSpacing: '0.2em', filter: 'blur(0px)', duration: 0.14 },
-        0.30)
-      tl.fromTo(ch2SubRef.current,
-        { opacity: 0, x: -40 },
-        { opacity: 1, x: 0, duration: 0.1 },
-        0.40)
-      tl.to([ch2TitleRef.current, ch2SubRef.current],
-        { opacity: 0, y: -30, duration: 0.08 },
-        0.58)
+      // Chapter 2: Shingeki No Kyojin
+      tl.fromTo(ch2TitleRef.current, { opacity: 0, scale: 0.8, letterSpacing: "1em" }, { opacity: 1, scale: 1, letterSpacing: "0.2em", duration: 2 })
+      tl.fromTo(ch2SubRef.current, { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 1 }, "-=1")
+      tl.to([ch2TitleRef.current, ch2SubRef.current], { opacity: 0, scale: 1.2, filter: 'blur(20px)', duration: 2 }, "+=2")
 
-      tl.fromTo(overlayRef.current,
-        { opacity: 0.55 },
-        { opacity: 0.10, duration: 0.15 },
-        0.62)
+      // Chapter 3: Final Reveal
+      tl.fromTo(overlayRef.current, { backgroundColor: "rgba(0,0,0,0.6)" }, { backgroundColor: "rgba(0,0,0,0.2)", duration: 2 })
+      tl.fromTo(ch3TitleRef.current, { opacity: 0, y: 50 }, { opacity: 1, y: 0, duration: 2 })
+      tl.fromTo(ch3SubRef.current, { opacity: 0 }, { opacity: 1, duration: 1 }, "-=0.5")
+    }
 
-      tl.fromTo(ch3TitleRef.current,
-        { opacity: 0, scale: 1.15, filter: 'blur(14px)' },
-        { opacity: 1, scale: 1,    filter: 'blur(0px)', duration: 0.16 },
-        0.68)
-      tl.fromTo(ch3SubRef.current,
-        { opacity: 0, y: 24 },
-        { opacity: 1, y: 0, duration: 0.12 },
-        0.80)
+    // 3. MOUSE PARALLAX EFFECT
+    const handleMouseMove = (e) => {
+      const { clientX, clientY } = e
+      const xPos = (clientX / window.innerWidth - 0.5) * 40
+      const yPos = (clientY / window.innerHeight - 0.5) * 40
+
+      gsap.to(".hero__chapter", {
+        x: xPos,
+        y: yPos,
+        duration: 1.5,
+        ease: "power2.out",
+        overwrite: "auto"
+      })
     }
 
     if (video.readyState >= 1) {
@@ -101,14 +96,17 @@ const Hero = () => {
       video.addEventListener('loadedmetadata', setup, { once: true })
     }
 
-    return () => ScrollTrigger.getAll().forEach(t => t.kill())
+    window.addEventListener("mousemove", handleMouseMove)
+
+    return () => {
+      ScrollTrigger.getAll().forEach(t => t.kill())
+      window.removeEventListener("mousemove", handleMouseMove)
+    }
   }, [])
 
   return (
-
     <section className="hero" ref={sectionRef}>
-      <div className="hero__sticky" ref={stickyRef}>
-
+      <div className="hero__sticky">
         <video
           ref={videoRef}
           className="hero__video"
@@ -117,11 +115,11 @@ const Hero = () => {
           playsInline
           preload="auto"
         />
-
+        
         <div className="hero__overlay" ref={overlayRef} />
-
         <div className="hero__grain" />
 
+        {/* Chapter 1 */}
         <div className="hero__chapter hero__ch1">
           <div className="hero__eyebrow">
             <span className="hero__rule" />
@@ -129,22 +127,24 @@ const Hero = () => {
             <span className="hero__rule" />
           </div>
           <h1 className="hero__ch1-title" ref={ch1TitleRef}>
-            Beyond the <em>Walls</em><br />
-            <span>lies the truth</span>
+            BEYOND THE <em className="glow-text">WALLS</em><br />
+            <span>LIES THE TRUTH</span>
           </h1>
           <p className="hero__ch1-sub" ref={ch1SubRef}>
             Humanity's last refuge — three walls, one consuming dread.
           </p>
         </div>
 
+        {/* Chapter 2 */}
         <div className="hero__chapter hero__ch2">
           <p className="hero__ch2-title" ref={ch2TitleRef}>SHINGEKI NO KYOJIN</p>
-          <p className="hero__ch2-sub"   ref={ch2SubRef}>— The day the wall was breached —</p>
+          <p className="hero__ch2-sub"   ref={ch2SubRef}>— THE DAY THE WALL WAS BREACHED —</p>
         </div>
 
+        {/* Chapter 3 */}
         <div className="hero__chapter hero__ch3">
           <h2 className="hero__ch3-title" ref={ch3TitleRef}>
-            ATTACK<br /><span>ON TITAN</span>
+            ATTACK<br /><span className="red-text">ON TITAN</span>
           </h2>
           <p className="hero__ch3-sub" ref={ch3SubRef}>
             Dedicate your heart. Pledge your life.
@@ -154,7 +154,6 @@ const Hero = () => {
         <div className="hero__scroll-hint">
           <span />
         </div>
-
       </div>
     </section>
   )
